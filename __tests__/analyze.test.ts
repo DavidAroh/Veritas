@@ -6,7 +6,8 @@
  * no real API key required.
  */
 import { NextRequest } from 'next/server'
-import { POST, __test } from '@/app/api/analyze/route'
+import { POST } from '@/app/api/analyze/route'
+import { rateBuckets, MAX_CONTENT_CHARS } from '@/app/api/analyze/internal'
 
 const VALID_RESPONSE = {
   page_summary: 'A short test summary.',
@@ -54,7 +55,7 @@ const LONG_CONTENT = 'x'.repeat(500)
 
 beforeEach(() => {
   process.env.GEMINI_API_KEY = 'test-key'
-  __test.rateBuckets.clear()
+  rateBuckets.clear()
 })
 
 afterEach(() => {
@@ -120,7 +121,7 @@ describe('analyze route — input validation', () => {
   })
 
   it('rejects oversized content with code CONTENT_TOO_LONG', async () => {
-    const huge = 'x'.repeat(__test.MAX_CONTENT_CHARS * 4 + 100)
+    const huge = 'x'.repeat(MAX_CONTENT_CHARS * 4 + 100)
     const res = await POST(buildRequest({ content: huge }))
     expect(res.status).toBe(413)
     const body = await res.json()

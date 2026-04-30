@@ -1,4 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
+import {
+  MIN_CONTENT_CHARS,
+  MAX_CONTENT_CHARS,
+  checkRateLimit,
+  type ErrorCode,
+} from './internal'
 
 const SYSTEM_PROMPT = `You are Veritas Agent, an AI-powered truth verification assistant.
 Your role is to analyze information from the internet and determine its credibility.
@@ -41,51 +47,8 @@ RULES:
 - Keep all text concise (browser extension UI)
 - Return ONLY the JSON object, nothing else`
 
-const MIN_CONTENT_CHARS = 200
-const MAX_CONTENT_CHARS = 6000
-const RATE_LIMIT_WINDOW_MS = 60_000
-const RATE_LIMIT_MAX_REQUESTS = 12
-
-type ErrorCode =
-  | 'MISSING_CONTENT'
-  | 'CONTENT_TOO_SHORT'
-  | 'CONTENT_TOO_LONG'
-  | 'RATE_LIMITED'
-  | 'SERVER_MISCONFIGURED'
-  | 'UPSTREAM_RATE_LIMITED'
-  | 'INVALID_KEY'
-  | 'API_ERROR'
-  | 'PARSE_ERROR'
-  | 'INTERNAL_ERROR'
-
 function errorResponse(code: ErrorCode, message: string, status: number) {
   return NextResponse.json({ error: message, code }, { status })
-}
-
-const rateBuckets = new Map<string, { count: number; resetAt: number }>()
-
-function checkRateLimit(ip: string): { ok: true } | { ok: false; retryAfter: number } {
-  const now = Date.now()
-  const bucket = rateBuckets.get(ip)
-  if (!bucket || bucket.resetAt < now) {
-    rateBuckets.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS })
-    return { ok: true }
-  }
-  if (bucket.count >= RATE_LIMIT_MAX_REQUESTS) {
-    return { ok: false, retryAfter: Math.ceil((bucket.resetAt - now) / 1000) }
-  }
-  bucket.count += 1
-  return { ok: true }
-}
-
-// Periodic cleanup so the map doesn't grow unbounded.
-if (typeof globalThis !== 'undefined' && !(globalThis as any).__veritasRateCleanup) {
-  ;(globalThis as any).__veritasRateCleanup = setInterval(() => {
-    const now = Date.now()
-    rateBuckets.forEach((b, ip) => {
-      if (b.resetAt < now) rateBuckets.delete(ip)
-    })
-  }, RATE_LIMIT_WINDOW_MS).unref?.()
 }
 
 function clientIp(request: NextRequest): string {
@@ -201,5 +164,3 @@ export async function POST(request: NextRequest) {
     return errorResponse('INTERNAL_ERROR', 'Internal server error', 500)
   }
 }
-
-export const __test = { checkRateLimit, rateBuckets, MIN_CONTENT_CHARS, MAX_CONTENT_CHARS }
