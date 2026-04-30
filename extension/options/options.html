@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Veritas Agent — Settings</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Mono:wght@400;500&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0a0a0a;
+      color: #e8e6e0;
+      font-family: 'DM Mono', 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    .wrap { max-width: 640px; margin: 0 auto; padding: 40px 28px 80px; }
+
+    .header { display: flex; align-items: center; gap: 10px; margin-bottom: 32px; }
+    .logo-icon {
+      width: 28px; height: 28px;
+      border: 1.5px solid #b8ff57;
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .logo-dot { width: 9px; height: 9px; background: #b8ff57; border-radius: 50%; }
+    .logo-text { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 18px; letter-spacing: -0.02em; }
+    .logo-text span { color: #b8ff57; }
+    .header-sub { color: #555550; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; margin-left: auto; }
+
+    .section {
+      background: #0d0d0d;
+      border: 1px solid #1a1a1a;
+      border-radius: 10px;
+      padding: 22px;
+      margin-bottom: 18px;
+    }
+
+    .section-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 15px;
+      letter-spacing: -0.01em;
+      margin-bottom: 4px;
+    }
+
+    .section-desc { color: #666660; font-size: 12px; margin-bottom: 16px; }
+
+    label {
+      display: block;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #888880;
+      margin-bottom: 6px;
+    }
+
+    input[type="text"], input[type="password"], input[type="url"], textarea, select {
+      width: 100%;
+      background: #060606;
+      border: 1px solid #1f1f1f;
+      border-radius: 6px;
+      color: #e8e6e0;
+      font-family: inherit;
+      font-size: 12px;
+      padding: 10px 12px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    input:focus, textarea:focus, select:focus { border-color: #b8ff57; }
+
+    textarea { resize: vertical; min-height: 70px; line-height: 1.5; }
+
+    .field { margin-bottom: 14px; }
+    .field:last-child { margin-bottom: 0; }
+    .help { font-size: 11px; color: #555550; margin-top: 6px; }
+
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 520px) { .row { grid-template-columns: 1fr; } }
+
+    .toggle-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #161616;
+    }
+    .toggle-row:last-child { border-bottom: none; }
+    .toggle-row .label-stack .lbl { font-size: 12px; color: #c0beb8; }
+    .toggle-row .label-stack .sub { font-size: 11px; color: #555550; margin-top: 2px; }
+
+    .switch { position: relative; width: 36px; height: 20px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute; cursor: pointer; inset: 0;
+      background: #1f1f1f; border-radius: 100px; transition: 0.2s;
+    }
+    .slider::before {
+      content: ''; position: absolute; height: 14px; width: 14px;
+      left: 3px; top: 3px; background: #888880;
+      border-radius: 50%; transition: 0.2s;
+    }
+    .switch input:checked + .slider { background: #b8ff5740; }
+    .switch input:checked + .slider::before { transform: translateX(16px); background: #b8ff57; }
+
+    .actions { display: flex; gap: 10px; align-items: center; margin-top: 24px; }
+
+    .btn {
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 10px 18px;
+      border-radius: 6px;
+      border: 1px solid #b8ff57;
+      background: #b8ff57;
+      color: #000;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn:hover { background: #c4ff66; }
+    .btn-secondary { background: transparent; color: #b8ff57; }
+    .btn-secondary:hover { background: #b8ff5710; }
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid #2a2a2a;
+      color: #888880;
+    }
+    .btn-ghost:hover { border-color: #555550; color: #c0beb8; }
+
+    .saved-toast {
+      font-size: 11px; color: #4ade80;
+      opacity: 0; transition: opacity 0.3s;
+      margin-left: auto;
+    }
+    .saved-toast.show { opacity: 1; }
+
+    a { color: #b8ff57; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <div class="logo-icon"><div class="logo-dot"></div></div>
+      <div class="logo-text">VERITAS<span>.</span></div>
+      <span class="header-sub">Settings</span>
+    </div>
+
+    <div class="section">
+      <div class="section-title">API Backend</div>
+      <div class="section-desc">Where the extension sends pages for analysis.</div>
+
+      <div class="field">
+        <label for="apiBase">Backend URL</label>
+        <input id="apiBase" type="url" placeholder="https://your-app.vercel.app" />
+        <div class="help">Your deployed Next.js app URL. Leave blank to use direct Gemini calls only.</div>
+      </div>
+
+      <div class="field">
+        <label for="geminiKey">Gemini API key (fallback)</label>
+        <input id="geminiKey" type="password" placeholder="AIza…" autocomplete="off" />
+        <div class="help">
+          Used only when the backend is unavailable. Get a free key at
+          <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">aistudio.google.com</a>.
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="geminiModel">Gemini model</label>
+        <select id="geminiModel">
+          <optgroup label="Aliases (auto-update)">
+            <option value="gemini-flash-latest">gemini-flash-latest</option>
+            <option value="gemini-flash-lite-latest">gemini-flash-lite-latest</option>
+            <option value="gemini-pro-latest">gemini-pro-latest</option>
+          </optgroup>
+          <optgroup label="Gemini 3.x (preview)">
+            <option value="gemini-3.1-pro-preview">gemini-3.1-pro-preview (frontier reasoning)</option>
+            <option value="gemini-3-flash-preview">gemini-3-flash-preview (frontier, fast)</option>
+            <option value="gemini-3.1-flash-lite-preview">gemini-3.1-flash-lite-preview</option>
+          </optgroup>
+          <optgroup label="Gemini 2.5 (stable)">
+            <option value="gemini-2.5-flash">gemini-2.5-flash (recommended)</option>
+            <option value="gemini-2.5-flash-lite">gemini-2.5-flash-lite (cheapest)</option>
+            <option value="gemini-2.5-pro">gemini-2.5-pro (best 2.5 quality)</option>
+          </optgroup>
+          <optgroup label="Legacy (deprecated by Google)">
+            <option value="gemini-2.0-flash">gemini-2.0-flash</option>
+            <option value="gemini-2.0-flash-lite">gemini-2.0-flash-lite</option>
+          </optgroup>
+          <option value="__custom__">Custom…</option>
+        </select>
+        <input id="geminiModelCustom" type="text" placeholder="e.g. gemini-2.5-flash-preview-09-2025"
+          style="display:none;margin-top:6px" />
+        <div class="help">
+          Free-tier quota is per-model. Switch models if you hit a 429.
+          Default: <strong style="color:#c0beb8">gemini-2.5-flash</strong> (stable).
+          For frontier quality try <strong style="color:#c0beb8">gemini-3-flash-preview</strong>.
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Behavior</div>
+      <div class="section-desc">Control when and where Veritas runs.</div>
+
+      <div class="field">
+        <label for="badgeCorner">Badge position</label>
+        <select id="badgeCorner">
+          <option value="bottom-right">Bottom right</option>
+          <option value="bottom-left">Bottom left</option>
+          <option value="top-right">Top right</option>
+          <option value="top-left">Top left</option>
+        </select>
+        <div class="help">You can also drag the badge directly on any page.</div>
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label for="whitelist">Always analyze (whitelist)</label>
+          <textarea id="whitelist" placeholder="nytimes.com&#10;reuters.com"></textarea>
+          <div class="help">One domain per line.</div>
+        </div>
+        <div class="field">
+          <label for="blacklist">Never analyze (blacklist)</label>
+          <textarea id="blacklist" placeholder="mail.google.com&#10;banking.example.com"></textarea>
+          <div class="help">One domain per line.</div>
+        </div>
+      </div>
+
+      <div class="toggle-row">
+        <div class="label-stack">
+          <div class="lbl">Inline claim highlights</div>
+          <div class="sub">Underline flagged sentences directly in articles.</div>
+        </div>
+        <label class="switch">
+          <input id="inlineHighlights" type="checkbox" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="toggle-row">
+        <div class="label-stack">
+          <div class="lbl">Auto-analyze on page load</div>
+          <div class="sub">When off, you must press the badge or shortcut to analyze.</div>
+        </div>
+        <label class="switch">
+          <input id="autoAnalyze" type="checkbox" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="save" class="btn">Save</button>
+      <button id="reset" class="btn btn-ghost">Reset</button>
+      <span id="toast" class="saved-toast">✓ Saved</span>
+    </div>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>

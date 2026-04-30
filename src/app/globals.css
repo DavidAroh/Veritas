@@ -1,0 +1,121 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&family=Instrument+Serif:ital@0;1&display=swap');
+
+:root {
+  --bg:        #0a0a0a;
+  --bg2:       #111111;
+  --bg3:       #1a1a1a;
+  --surface:   #1f1f1f;
+  --surface2:  #272727;
+  --border:    #2a2a2a;
+  --border2:   #333333;
+  --text:      #e8e6e0;
+  --text2:     #888880;
+  --text3:     #555550;
+  --acid:      #b8ff57;
+  --acid2:     #8fd43a;
+  --red:       #ff4545;
+  --amber:     #ffab40;
+  --green:     #4ade80;
+  --blue:      #60a5fa;
+  --mono:      'DM Mono', monospace;
+  --display:   'Syne', sans-serif;
+  --serif:     'Instrument Serif', serif;
+  --header-bg: rgba(10, 10, 10, 0.85);
+}
+
+[data-theme='light'] {
+  --bg:        #fcfcfc;
+  --bg2:       #f5f5f5;
+  --bg3:       #ededed;
+  --surface:   #ffffff;
+  --surface2:  #ebebeb;
+  --border:    #e0e0e0;
+  --border2:   #d1d1d1;
+  --text:      #1a1a1a;
+  --text2:     #4a4a4a;
+  --text3:     #7a7a7a;
+  --acid:      #7fb135; /* More contrast for light mode */
+  --acid2:     #6a9c2e;
+  --red:       #d32f2f;
+  --amber:     #f57c00;
+  --green:     #388e3c;
+  --blue:      #1976d2;
+  --header-bg: rgba(252, 252, 252, 0.85);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+::selection {
+  background: var(--acid);
+  color: #000;
+}
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* Animated noise grain overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scanline {
+  0%   { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+@keyframes pulse-ring {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%       { transform: scale(1.05); opacity: 0.8; }
+}
+
+@keyframes spin-slow {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+.fade-up {
+  animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.fade-up-1 { animation-delay: 0.05s; }
+.fade-up-2 { animation-delay: 0.10s; }
+.fade-up-3 { animation-delay: 0.15s; }
+.fade-up-4 { animation-delay: 0.20s; }
+.fade-up-5 { animation-delay: 0.25s; }
+
+.cursor-blink::after {
+  content: '▊';
+  animation: blink 1s step-end infinite;
+  color: var(--acid);
+}
