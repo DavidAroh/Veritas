@@ -49,7 +49,7 @@ export default function AnalyzerDemo() {
   const [fetchingUrl, setFetchingUrl] = useState(false)
   const [result, setResult] = useState<AnalysisResult | null>(null)
   const [error, setError] = useState('')
-  const [activeTab, setActiveTab] = useState<'claims' | 'signals' | 'verdict'>('claims')
+  const [activeTab, setActiveTab] = useState<'claims' | 'signals' | 'sources' | 'verdict'>('claims')
   const [shareStatus, setShareStatus] = useState('')
 
   // Inject responsive grid CSS once.
@@ -595,7 +595,7 @@ export default function AnalyzerDemo() {
 
                 {/* Tabs */}
                 <div style={{ borderBottom: '1px solid var(--border)', display: 'flex', gap: 0, flexWrap: 'wrap' }}>
-                  {(['claims', 'signals', 'verdict'] as const).map(tab => (
+                  {(['claims', 'signals', 'sources', 'verdict'] as const).map(tab => (
                     <button
                       key={tab}
                       onClick={() => setActiveTab(tab)}
@@ -616,6 +616,7 @@ export default function AnalyzerDemo() {
                     >
                       {tab === 'claims' && `claims (${result.claims.length})`}
                       {tab === 'signals' && `signals (${result.misinformation_signals.length})`}
+                      {tab === 'sources' && `sources (${result.sources?.length || 0})`}
                       {tab === 'verdict' && 'verdict'}
                     </button>
                   ))}
@@ -654,6 +655,45 @@ export default function AnalyzerDemo() {
                         </span>
                       </div>
                     ))}
+                  </div>
+                )}
+
+                {activeTab === 'sources' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {!result.sources?.length ? (
+                      <p style={{ fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--text3)' }}>
+                        No web sources were retrieved for this analysis.
+                      </p>
+                    ) : result.sources.map((src, i) => {
+                      let host = src.url
+                      try { host = new URL(src.url).hostname.replace(/^www\./, '') } catch {}
+                      return (
+                        <a
+                          key={i}
+                          href={src.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            display: 'flex', flexDirection: 'column', gap: 3,
+                            padding: '10px 12px',
+                            borderRadius: 6,
+                            border: '1px solid var(--border2)',
+                            background: 'var(--bg3)',
+                            textDecoration: 'none',
+                          }}
+                        >
+                          <span style={{
+                            fontFamily: 'var(--mono)', fontSize: 12,
+                            color: 'var(--text)', lineHeight: 1.45,
+                          }}>
+                            {src.title}
+                          </span>
+                          <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--acid)' }}>
+                            ↗ {host}
+                          </span>
+                        </a>
+                      )
+                    })}
                   </div>
                 )}
 

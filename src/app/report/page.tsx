@@ -169,6 +169,41 @@ function ReportBody({
         </div>
       </div>
 
+      {result.sources?.length > 0 && (
+        <div>
+          <SectionTitle>Sources ({result.sources.length})</SectionTitle>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {result.sources.map((src, i) => {
+              let host = src.url
+              try { host = new URL(src.url).hostname.replace(/^www\./, '') } catch {}
+              return (
+                <a
+                  key={i}
+                  href={src.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: 'flex', flexDirection: 'column', gap: 3,
+                    padding: '10px 12px',
+                    borderRadius: 6,
+                    border: '1px solid var(--border)',
+                    background: 'var(--bg3)',
+                    textDecoration: 'none',
+                  }}
+                >
+                  <span style={{ fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--text)', lineHeight: 1.45 }}>
+                    {src.title}
+                  </span>
+                  <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--green)' }}>
+                    ↗ {host}
+                  </span>
+                </a>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       {result.misinformation_signals.length > 0 && (
         <div>
           <SectionTitle>Misinformation signals</SectionTitle>

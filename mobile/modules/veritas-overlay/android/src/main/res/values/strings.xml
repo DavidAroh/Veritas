@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="veritas_accessibility_description">Lets Veritas read the text on your current screen when you tap the floating bubble, so it can fact-check the article or post you are viewing. Text is sent to your configured Veritas backend for analysis and is not stored by the service.</string>
+</resources>

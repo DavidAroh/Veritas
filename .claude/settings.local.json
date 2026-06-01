@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "Bash(npm install *)",
-      "Bash(npx jest *)"
+      "Bash(npx jest *)",
+      "Bash(npx tsc *)",
+      "Bash(echo \"tsc exit: $?\")",
+      "WebFetch(domain:nogree-tau.vercel.app)",
+      "Bash(curl -s https://nogree-tau.vercel.app/)"
     ]
   }
 }

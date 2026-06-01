@@ -30,6 +30,7 @@ function scoreColor(score) {
 
 function renderResult(result) {
   currentResult = result;
+  setViewMoreVisible(true);
   const color = LABEL_COLORS[result.credibility_label] || '#888880';
   const sColor = scoreColor(result.credibility_score);
   const circumference = 2 * Math.PI * 28;
@@ -81,6 +82,9 @@ function renderResult(result) {
       </button>
       <button class="tab ${activeTab === 'signals' ? 'active' : ''}" data-tab="signals">
         Signals (${result.misinformation_signals.length})
+      </button>
+      <button class="tab ${activeTab === 'sources' ? 'active' : ''}" data-tab="sources">
+        Sources (${(result.sources || []).length})
       </button>
     </div>
 
@@ -141,6 +145,26 @@ function renderTab() {
       if (item) item.classList.toggle('expanded');
     });
 
+  } else if (activeTab === 'sources') {
+    const sources = currentResult.sources || [];
+    const noSources = '<div style="padding:16px;text-align:center;font-size:11px;color:#444440">No web sources were retrieved for this analysis.</div>';
+    const sourceItems = sources.map(s => {
+      let host = s.url;
+      try { host = new URL(s.url).hostname.replace(/^www\./, ''); } catch (_) {}
+      return `
+        <a class="source-item" href="${escapeAttr(s.url)}" target="_blank" rel="noopener noreferrer">
+          <span class="source-title">${escapeHtml(s.title || s.url)}</span>
+          <span class="source-host">↗ ${escapeHtml(host)}</span>
+        </a>
+      `;
+    }).join('');
+
+    container.innerHTML = `
+      <div class="sources-list">
+        ${sources.length === 0 ? noSources : sourceItems}
+      </div>
+    `;
+
   } else {
     const noSignals = '<div style="padding:16px;text-align:center;font-size:11px;color:#444440">No misinformation signals detected.</div>';
     const signalItems = currentResult.misinformation_signals.map(s => `
@@ -162,6 +186,12 @@ function renderTab() {
   }
 }
 
+function escapeAttr(s) {
+  // Only allow http(s) links through; everything else becomes an inert anchor.
+  const url = String(s == null ? '' : s);
+  return /^https?:\/\//i.test(url) ? escapeHtml(url) : '#';
+}
+
 function switchTab(tab) {
   activeTab = tab;
   document.querySelectorAll('.tab').forEach(t => {
@@ -171,6 +201,7 @@ function switchTab(tab) {
 }
 
 function showAnalyzing() {
+  setViewMoreVisible(false);
   const pill = document.getElementById('status-pill');
   pill.textContent = 'Analyzing';
   pill.style.color = '#60a5fa';
@@ -185,6 +216,7 @@ function showAnalyzing() {
 }
 
 function showEmpty(msg) {
+  setViewMoreVisible(false);
   document.getElementById('status-pill').textContent = 'No data';
   document.getElementById('main-content').innerHTML = `
     <div class="empty-state">
@@ -206,6 +238,7 @@ function escapeHtml(s) {
 }
 
 function showError(err) {
+  setViewMoreVisible(false);
   const pill = document.getElementById('status-pill');
   pill.textContent = 'Error';
   pill.style.color = '#ff4545';
@@ -257,6 +290,48 @@ function flashShareBtn(text) {
   setTimeout(() => { btn.innerHTML = original; }, 1500);
 }
 
+// Toggle the "View full report" CTA. Only meaningful once we have a result.
+function setViewMoreVisible(visible) {
+  const btn = document.getElementById('btn-viewmore');
+  if (btn) btn.style.display = visible ? 'flex' : 'none';
+}
+
+function flashViewMore(text, keep) {
+  const label = document.getElementById('viewmore-label');
+  if (!label) return;
+  label.textContent = text;
+  if (!keep) setTimeout(() => { label.textContent = 'View full report'; }, 1800);
+}
+
+// Persists the current analysis to the backend and opens the full report
+// page (the Veritas web app) in a new tab, where the user gets the complete
+// breakdown: summary, every claim with reasoning, sources, and signals.
+async function openFullReport() {
+  if (!currentResult) return;
+  const settings = await new Promise((r) =>
+    chrome.storage.sync.get({ apiBase: '' }, r),
+  );
+  const apiBase = (settings.apiBase || '').replace(/\/+$/, '');
+  if (!apiBase) {
+    flashViewMore('Set backend URL in settings');
+    return;
+  }
+  flashViewMore('Opening…', true);
+  try {
+    const res = await fetch(`${apiBase}/api/report`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: currentPageUrl, result: currentResult }),
+    });
+    if (!res.ok) throw new Error('Report failed');
+    const { id } = await res.json();
+    chrome.tabs.create({ url: `${apiBase}/report?id=${id}` });
+    flashViewMore('View full report');
+  } catch (e) {
+    flashViewMore('Failed — try again');
+  }
+}
+
 async function shareCurrentResult() {
   if (!currentResult) {
     flashShareBtn('Nothing to share');
@@ -299,6 +374,7 @@ function refreshCurrentTab() {
 
 document.getElementById('btn-refresh').addEventListener('click', refreshCurrentTab);
 document.getElementById('btn-share').addEventListener('click', shareCurrentResult);
+document.getElementById('btn-viewmore').addEventListener('click', openFullReport);
 document.getElementById('btn-settings').addEventListener('click', () => {
   if (chrome.runtime.openOptionsPage) chrome.runtime.openOptionsPage();
 });

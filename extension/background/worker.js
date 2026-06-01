@@ -100,10 +100,13 @@ async function analyzeContent(payload) {
         role: 'user',
         parts: [{ text: JSON.stringify({ ...payload, content: truncatedContent }) }],
       }],
+      // Search grounding: verify claims against live sources and return the
+      // URLs used in groundingMetadata. responseMimeType can't be combined
+      // with tools, so we strip fences from the text instead.
+      tools: [{ google_search: {} }],
       generationConfig: {
         temperature: 0.2,
         maxOutputTokens: 2000,
-        responseMimeType: 'application/json',
       },
     }),
   });
@@ -134,13 +137,35 @@ async function analyzeContent(payload) {
   }
 
   const data = await res.json();
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  const candidate = data.candidates?.[0];
+  const text = (candidate?.content?.parts || [])
+    .map((p) => (typeof p?.text === 'string' ? p.text : ''))
+    .join('');
   const clean = text.replace(/```json|```/g, '').trim();
+  let parsed;
   try {
-    return JSON.parse(clean);
+    parsed = JSON.parse(clean);
   } catch {
     throw new AnalysisError('PARSE_ERROR', 'Could not parse Gemini response.', 502);
   }
+  parsed.sources = extractGroundingSources(candidate);
+  return parsed;
+}
+
+// Pulls real web citations out of Gemini's grounding metadata. Mirrors the
+// server-side extractor in src/app/api/analyze/internal.ts.
+function extractGroundingSources(candidate) {
+  const chunks = candidate?.groundingMetadata?.groundingChunks;
+  if (!Array.isArray(chunks)) return [];
+  const seen = new Set();
+  const out = [];
+  for (const chunk of chunks) {
+    const url = (chunk?.web?.uri || '').trim();
+    if (!url || seen.has(url)) continue;
+    seen.add(url);
+    out.push({ url, title: (chunk?.web?.title || '').trim() || url });
+  }
+  return out;
 }
 
 // In-flight guard: prevents duplicate simultaneous calls for the same URL

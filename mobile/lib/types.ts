@@ -1,5 +1,7 @@
+// Mirrors src/lib/types.ts from the web app so results render identically.
 export type VerificationStatus = 'TRUE' | 'MISLEADING' | 'FALSE' | 'UNVERIFIED'
-export type CredibilityLabel = 'Verified' | 'Partially Verified' | 'Misleading' | 'Unverified' | 'False'
+export type CredibilityLabel =
+  | 'Verified' | 'Partially Verified' | 'Misleading' | 'Unverified' | 'False'
 
 export interface Claim {
   claim: string
@@ -8,9 +10,6 @@ export interface Claim {
   reason: string
 }
 
-// A real web page the model retrieved via search grounding. Unlike the
-// model's free-text reasoning, these URLs are returned by Gemini's grounding
-// metadata, so they point to evidence the user can actually open.
 export interface Source {
   title: string
   url: string
@@ -28,9 +27,17 @@ export interface AnalysisResult {
   sources: Source[]
 }
 
-export interface AnalysisRequest {
-  url: string
-  title: string
-  source: string
-  content: string
+export interface Settings {
+  apiBase: string
+  geminiKey: string
+  geminiModel: string
+  autoAnalyze: boolean
+}
+
+export interface HistoryEntry {
+  id: string
+  url?: string
+  title?: string
+  result: AnalysisResult
+  createdAt: number
 }

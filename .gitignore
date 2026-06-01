@@ -6,3 +6,10 @@ out/
 dist/
 *.log
 .DS_Store
+
+# Expo (mobile/)
+.expo/
+mobile/.expo/
+mobile/ios/
+mobile/android/
+mobile/expo-env.d.ts

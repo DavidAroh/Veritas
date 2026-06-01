@@ -186,6 +186,80 @@ describe('analyze route — rate limiting', () => {
   })
 })
 
+describe('analyze route — output normalization', () => {
+  it('clamps an out-of-range score into 0–100', async () => {
+    ;(global as any).fetch = mockGeminiSuccess({ ...VALID_RESPONSE, credibility_score: 150 })
+    const res = await POST(buildRequest({ content: LONG_CONTENT }))
+    expect(res.status).toBe(200)
+    expect((await res.json()).credibility_score).toBe(100)
+  })
+
+  it('derives a valid label from the score when Gemini sends a bogus one', async () => {
+    ;(global as any).fetch = mockGeminiSuccess({
+      ...VALID_RESPONSE,
+      credibility_score: 90,
+      credibility_label: 'Totally Legit',
+    })
+    const res = await POST(buildRequest({ content: LONG_CONTENT }))
+    expect((await res.json()).credibility_label).toBe('Verified')
+  })
+
+  it('drops malformed claims and coerces unknown verifications to UNVERIFIED', async () => {
+    ;(global as any).fetch = mockGeminiSuccess({
+      ...VALID_RESPONSE,
+      claims: [
+        { claim: 'kept', verification: 'WAT', confidence: '50%', reason: 'r' },
+        { verification: 'TRUE' }, // no claim text → dropped
+        'not an object', // → dropped
+      ],
+    })
+    const res = await POST(buildRequest({ content: LONG_CONTENT }))
+    const body = await res.json()
+    expect(body.claims).toHaveLength(1)
+    expect(body.claims[0].claim).toBe('kept')
+    expect(body.claims[0].verification).toBe('UNVERIFIED')
+  })
+
+  it('returns PARSE_ERROR when valid JSON lacks a usable score', async () => {
+    ;(global as any).fetch = mockGeminiSuccess({ page_summary: 'no score here' })
+    const res = await POST(buildRequest({ content: LONG_CONTENT }))
+    expect(res.status).toBe(502)
+    expect((await res.json()).code).toBe('PARSE_ERROR')
+  })
+
+  it('defaults sources to an empty array when no grounding is present', async () => {
+    ;(global as any).fetch = mockGeminiSuccess()
+    const res = await POST(buildRequest({ content: LONG_CONTENT }))
+    expect((await res.json()).sources).toEqual([])
+  })
+
+  it('extracts and dedupes web sources from grounding metadata', async () => {
+    ;(global as any).fetch = jest.fn().mockResolvedValue({
+      ok: true, status: 200, text: async () => '',
+      json: async () => ({
+        candidates: [{
+          content: { parts: [{ text: JSON.stringify(VALID_RESPONSE) }] },
+          groundingMetadata: {
+            groundingChunks: [
+              { web: { uri: 'https://apnews.com/article/x', title: 'AP: X' } },
+              { web: { uri: 'https://reuters.com/y', title: 'Reuters: Y' } },
+              { web: { uri: 'https://apnews.com/article/x', title: 'AP: X dupe' } },
+              { web: { title: 'no uri — dropped' } },
+            ],
+          },
+        }],
+      }),
+    })
+
+    const res = await POST(buildRequest({ content: LONG_CONTENT }))
+    const body = await res.json()
+    expect(body.sources).toEqual([
+      { url: 'https://apnews.com/article/x', title: 'AP: X' },
+      { url: 'https://reuters.com/y', title: 'Reuters: Y' },
+    ])
+  })
+})
+
 describe('analyze route — server config', () => {
   it('returns SERVER_MISCONFIGURED when GEMINI_API_KEY is missing', async () => {
     delete process.env.GEMINI_API_KEY

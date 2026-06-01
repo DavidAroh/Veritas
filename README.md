@@ -31,6 +31,10 @@ veritas-agent/
 │   ├── content/content.js        # extraction, badge, inline highlights
 │   ├── popup/popup.{html,js}
 │   └── options/options.{html,js} # settings UI
+├── mobile/                       # Expo (React Native) iOS + Android app
+│   ├── app/                      # expo-router screens (home, browse, settings)
+│   ├── components/               # ScoreRing, ClaimCard, ResultView
+│   └── lib/                      # api client, storage, types, theme
 ├── __tests__/                    # Jest tests (mocked Gemini)
 └── README.md
 ```
@@ -115,7 +119,7 @@ Then open the extension's options page and paste your deployed URL into **Backen
 
 1. **Content extraction** — Content script strips nav/ads and extracts readable article text
 2. **Claim detection** — Gemini identifies verifiable factual statements
-3. **Verification pass** — Each claim labeled TRUE / MISLEADING / FALSE / UNVERIFIED
+3. **Verification pass** — Gemini's **Google Search grounding** checks each claim against live sources, labeling it TRUE / MISLEADING / FALSE / UNVERIFIED. The real URLs it consulted are returned in `groundingMetadata` and surfaced to the user as **Sources** (see the "Sources" tab in the popup and demo). Requires a search-capable model (the default `gemini-2.5-flash` qualifies).
 4. **Signal analysis** — Detects sensational language, missing sources, etc.
 5. **Source rating** — Publisher reliability evaluated
 6. **Score generation** — 0–100 credibility score
@@ -215,6 +219,7 @@ To reload the extension after changes: `chrome://extensions/` → Veritas → re
 
 ## Roadmap
 
+- [x] Search-grounded citations (real source URLs per analysis)
 - [x] Inline text highlighting for flagged claims
 - [x] User settings popup for API key management
 - [x] History dashboard
@@ -238,4 +243,5 @@ To reload the extension after changes: `chrome://extensions/` → Veritas → re
 - **Styling**: CSS variables, custom design system (DM Mono + Syne)
 - **AI**: Google Gemini (`gemini-2.5-flash` default; Gemini 3.x preview models also selectable)
 - **Extension**: Manifest V3, Vanilla JS
+- **Mobile**: Expo / React Native (iOS + Android) — see [`mobile/README.md`](mobile/README.md)
 - **Tests**: Jest + ts-jest (mocked upstream)

@@ -3,6 +3,8 @@ import {
   MIN_CONTENT_CHARS,
   MAX_CONTENT_CHARS,
   checkRateLimit,
+  normalizeResult,
+  extractGroundingSources,
   type ErrorCode,
 } from './internal'
 
@@ -38,6 +40,7 @@ OUTPUT FORMAT — return ONLY valid JSON, no markdown, no prose, no code fences:
 }
 
 RULES:
+- Use the Google Search tool to verify claims against current, real sources before labeling them. Base verdicts on what you find, not on memory.
 - Be neutral and evidence-based
 - Do not assume claims are true without reasoning
 - Clearly indicate uncertainty
@@ -116,10 +119,14 @@ export async function POST(request: NextRequest) {
           role: 'user',
           parts: [{ text: JSON.stringify({ url, title, source, content: truncatedContent }) }],
         }],
+        // Google Search grounding lets Gemini verify claims against live
+        // sources and returns the URLs it used in groundingMetadata. Note:
+        // responseMimeType:'application/json' can't be combined with tools,
+        // so we rely on the prompt + fence-stripping to recover the JSON.
+        tools: [{ google_search: {} }],
         generationConfig: {
           temperature: 0.2,
           maxOutputTokens: 2000,
-          responseMimeType: 'application/json',
         },
       }),
     })
@@ -148,14 +155,25 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await response.json()
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
+    const candidate = data.candidates?.[0]
+    // With search grounding the model can split its reply across parts, so
+    // concatenate any text parts before parsing.
+    const text = (candidate?.content?.parts || [])
+      .map((p: any) => (typeof p?.text === 'string' ? p.text : ''))
+      .join('')
 
     const clean = text.replace(/```json|```/g, '').trim()
-    let result
+    let parsed
     try {
-      result = JSON.parse(clean)
+      parsed = JSON.parse(clean)
     } catch {
       return errorResponse('PARSE_ERROR', 'Failed to parse analysis result', 502)
+    }
+
+    const sources = extractGroundingSources(candidate)
+    const result = normalizeResult(parsed, sources)
+    if (!result) {
+      return errorResponse('PARSE_ERROR', 'Analysis result was malformed', 502)
     }
 
     return NextResponse.json(result)
